@@ -1,0 +1,633 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Board preview</title>
+<style>
+:root{
+  --bg:#eef0ec;
+  --board-bg:#e4e7e0;
+  --surface:#ffffff;
+  --text:#1c1f1a;
+  --text-muted:#5c6156;
+  --border:#d3d7cc;
+  --accent:#3f6b4f;
+  --accent-text:#f3f7f0;
+  --danger:#a3402f;
+  --list-bg:#eceee8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#181a16;
+    --board-bg:#14150f;
+    --surface:#23261f;
+    --text:#eceee7;
+    --text-muted:#9a9e8f;
+    --border:#343728;
+    --accent:#7fb894;
+    --accent-text:#0e1a12;
+    --danger:#e08872;
+    --list-bg:#1d1f18;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181a16;
+  --board-bg:#14150f;
+  --surface:#23261f;
+  --text:#eceee7;
+  --text-muted:#9a9e8f;
+  --border:#343728;
+  --accent:#7fb894;
+  --accent-text:#0e1a12;
+  --danger:#e08872;
+  --list-bg:#1d1f18;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  min-height:100%;
+}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.topbar h1{
+  font-size:17px;
+  font-weight:700;
+  margin:0;
+  letter-spacing:-0.01em;
+}
+.topbar .note{
+  font-size:12px;
+  color:var(--text-muted);
+}
+.reset-btn{
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text-muted);
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:7px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.reset-btn:hover{ color:var(--text); border-color:var(--text-muted); }
+
+.board{
+  display:flex;
+  gap:14px;
+  padding:18px 20px 32px;
+  overflow-x:auto;
+  align-items:flex-start;
+  background:var(--board-bg);
+  min-height:calc(100vh - 60px);
+}
+.list{
+  background:var(--list-bg);
+  border:1px solid var(--border);
+  border-radius:12px;
+  width:270px;
+  min-width:230px;
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  max-height:calc(100vh - 100px);
+}
+.list-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 10px 6px 12px;
+  gap:6px;
+}
+.list-title{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  flex:1;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-family:inherit;
+  padding:2px 0;
+}
+.list-title:focus{ outline:1px solid var(--accent); border-radius:4px; }
+.list-count{
+  font-size:11px;
+  color:var(--text-muted);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:1px 7px;
+}
+.list-del{
+  border:none;
+  background:transparent;
+  color:var(--text-muted);
+  cursor:pointer;
+  font-size:14px;
+  line-height:1;
+  padding:2px 4px;
+  border-radius:5px;
+}
+.list-del:hover{ color:var(--danger); }
+
+.cards{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:2px 10px;
+  overflow-y:auto;
+  min-height:8px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 10px;
+  font-size:13px;
+  line-height:1.4;
+  cursor:grab;
+  box-shadow:0 1px 0 rgba(0,0,0,0.02);
+}
+.card:active{ cursor:grabbing; }
+.card.dragging{ opacity:0.35; }
+.card-title{ font-weight:600; }
+.card-desc{
+  margin-top:3px;
+  color:var(--text-muted);
+  font-size:12px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.card-drop-slot{
+  height:2px;
+  background:var(--accent);
+  border-radius:2px;
+  margin:0 2px;
+}
+
+.add-card-btn, .add-list-btn{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:none;
+  background:transparent;
+  color:var(--text-muted);
+  font-size:13px;
+  font-family:inherit;
+  padding:8px 12px;
+  margin:2px 6px 10px;
+  border-radius:7px;
+  cursor:pointer;
+  text-align:left;
+}
+.add-card-btn:hover, .add-list-btn:hover{ background:var(--surface); color:var(--text); }
+.add-list-col{
+  flex:0 0 auto;
+  width:230px;
+}
+.add-list-btn{
+  width:100%;
+  border:1px dashed var(--border);
+  margin:0;
+  padding:10px 12px;
+  border-radius:12px;
+}
+
+.card-form, .list-form{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:0 10px 10px;
+}
+.list-form{ padding:0 6px; }
+.card-form textarea, .list-form input{
+  width:100%;
+  font-family:inherit;
+  font-size:13px;
+  padding:8px 9px;
+  border-radius:7px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  resize:none;
+}
+.card-form textarea{ min-height:52px; }
+.form-actions{ display:flex; gap:8px; align-items:center; }
+.btn-primary{
+  background:var(--accent);
+  color:var(--accent-text);
+  border:none;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:700;
+  padding:7px 12px;
+  border-radius:7px;
+  cursor:pointer;
+}
+.btn-text{
+  background:transparent;
+  border:none;
+  color:var(--text-muted);
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+  padding:0 4px;
+}
+
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:10;
+}
+.modal{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  width:100%;
+  max-width:420px;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.modal h2{ margin:0; font-size:15px; }
+.modal input, .modal textarea{
+  width:100%;
+  font-family:inherit;
+  font-size:13px;
+  padding:9px 10px;
+  border-radius:7px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+}
+.modal input{ font-weight:600; }
+.modal textarea{ min-height:80px; resize:vertical; }
+.modal-actions{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:4px;
+}
+.link-danger{
+  background:none;
+  border:none;
+  color:var(--danger);
+  font-size:12px;
+  cursor:pointer;
+  padding:0;
+}
+.right-actions{ display:flex; gap:8px; }
+.btn-ghost{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  padding:7px 12px;
+  border-radius:7px;
+  cursor:pointer;
+}
+</style>
+
+<div class="topbar">
+  <h1 id="board-title">Product launch board</h1>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="note">Preview — saved in this browser only</span>
+    <button class="reset-btn" id="reset-btn">Reset demo data</button>
+  </div>
+</div>
+
+<div class="board" id="board"></div>
+
+<div id="modal-root"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "kanban-preview-v1";
+
+  function seedData(){
+    return {
+      lists: [
+        {
+          id: "l1", title: "Backlog",
+          cards: [
+            { id:"c1", title:"Sketch onboarding flow", desc:"Rough wireframes for the first-run experience." },
+            { id:"c2", title:"Research competitor pricing", desc:"" },
+            { id:"c3", title:"Write launch announcement draft", desc:"" }
+          ]
+        },
+        {
+          id:"l2", title:"In progress",
+          cards:[
+            { id:"c4", title:"Build board drag-and-drop", desc:"Native HTML5 drag events, no library." },
+            { id:"c5", title:"Wire up card edit modal", desc:"" }
+          ]
+        },
+        {
+          id:"l3", title:"Done",
+          cards:[
+            { id:"c6", title:"Set up project scaffold", desc:"" }
+          ]
+        }
+      ]
+    };
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return seedData();
+      var parsed = JSON.parse(raw);
+      if(!parsed || !Array.isArray(parsed.lists)) return seedData();
+      return parsed;
+    }catch(e){
+      return seedData();
+    }
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ /* ignore */ }
+  }
+
+  var state = load();
+  var boardEl = document.getElementById("board");
+  var modalRoot = document.getElementById("modal-root");
+  var uid = 100;
+  function nextId(prefix){ uid += 1; return prefix + "-" + Date.now().toString(36) + uid; }
+
+  var dragCardId = null;
+  var addingListOpen = false;
+  var addingCardForListId = null;
+
+  function findList(listId){
+    for(var i=0;i<state.lists.length;i++){ if(state.lists[i].id===listId) return state.lists[i]; }
+    return null;
+  }
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+    });
+  }
+
+  function render(){
+    boardEl.innerHTML = "";
+
+    state.lists.forEach(function(list){
+      var col = document.createElement("div");
+      col.className = "list";
+      col.dataset.listId = list.id;
+
+      var header = document.createElement("div");
+      header.className = "list-header";
+      header.innerHTML =
+        '<input class="list-title" value="'+escapeHtml(list.title)+'" data-list-id="'+list.id+'">' +
+        '<span class="list-count">'+list.cards.length+'</span>' +
+        '<button class="list-del" title="Delete list" data-list-id="'+list.id+'">&times;</button>';
+      col.appendChild(header);
+
+      var cardsWrap = document.createElement("div");
+      cardsWrap.className = "cards";
+      cardsWrap.dataset.listId = list.id;
+
+      list.cards.forEach(function(card){
+        var cardEl = document.createElement("div");
+        cardEl.className = "card";
+        cardEl.draggable = true;
+        cardEl.dataset.cardId = card.id;
+        cardEl.dataset.listId = list.id;
+        cardEl.innerHTML =
+          '<div class="card-title">'+escapeHtml(card.title)+'</div>' +
+          (card.desc ? '<div class="card-desc">'+escapeHtml(card.desc)+'</div>' : '');
+        cardsWrap.appendChild(cardEl);
+      });
+
+      col.appendChild(cardsWrap);
+
+      if(addingCardForListId === list.id){
+        var form = document.createElement("div");
+        form.className = "card-form";
+        form.innerHTML =
+          '<textarea id="new-card-input" placeholder="Card title"></textarea>' +
+          '<div class="form-actions">' +
+            '<button class="btn-primary" id="new-card-save">Add card</button>' +
+            '<button class="btn-text" id="new-card-cancel" title="Cancel">&times;</button>' +
+          '</div>';
+        col.appendChild(form);
+      } else {
+        var addCardBtn = document.createElement("button");
+        addCardBtn.className = "add-card-btn";
+        addCardBtn.dataset.listId = list.id;
+        addCardBtn.innerHTML = "+ Add a card";
+        col.appendChild(addCardBtn);
+      }
+
+      boardEl.appendChild(col);
+    });
+
+    var addListCol = document.createElement("div");
+    addListCol.className = "add-list-col";
+    if(addingListOpen){
+      addListCol.innerHTML =
+        '<div class="list-form">' +
+          '<input id="new-list-input" placeholder="List name">' +
+          '<div class="form-actions">' +
+            '<button class="btn-primary" id="new-list-save">Add list</button>' +
+            '<button class="btn-text" id="new-list-cancel" title="Cancel">&times;</button>' +
+          '</div>' +
+        '</div>';
+    } else {
+      addListCol.innerHTML = '<button class="add-list-btn" id="open-add-list">+ Add another list</button>';
+    }
+    boardEl.appendChild(addListCol);
+
+    attachEvents();
+  }
+
+  function attachEvents(){
+    document.querySelectorAll(".list-title").forEach(function(input){
+      input.addEventListener("change", function(){
+        var list = findList(input.dataset.listId);
+        if(list){ list.title = input.value.trim() || list.title; save(); }
+      });
+    });
+
+    document.querySelectorAll(".list-del").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.lists = state.lists.filter(function(l){ return l.id !== btn.dataset.listId; });
+        save(); render();
+      });
+    });
+
+    document.querySelectorAll(".add-card-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        addingCardForListId = btn.dataset.listId;
+        render();
+        var ta = document.getElementById("new-card-input");
+        if(ta) ta.focus();
+      });
+    });
+
+    var newCardSave = document.getElementById("new-card-save");
+    if(newCardSave){
+      newCardSave.addEventListener("click", function(){
+        var ta = document.getElementById("new-card-input");
+        var title = ta.value.trim();
+        if(!title){ ta.focus(); return; }
+        var list = findList(addingCardForListId);
+        if(list){ list.cards.push({ id: nextId("c"), title: title, desc: "" }); save(); }
+        addingCardForListId = null;
+        render();
+      });
+    }
+    var newCardCancel = document.getElementById("new-card-cancel");
+    if(newCardCancel){
+      newCardCancel.addEventListener("click", function(){ addingCardForListId = null; render(); });
+    }
+
+    var openAddList = document.getElementById("open-add-list");
+    if(openAddList){
+      openAddList.addEventListener("click", function(){
+        addingListOpen = true; render();
+        var inp = document.getElementById("new-list-input");
+        if(inp) inp.focus();
+      });
+    }
+    var newListSave = document.getElementById("new-list-save");
+    if(newListSave){
+      newListSave.addEventListener("click", function(){
+        var inp = document.getElementById("new-list-input");
+        var title = inp.value.trim();
+        if(!title){ inp.focus(); return; }
+        state.lists.push({ id: nextId("l"), title: title, cards: [] });
+        save(); addingListOpen = false; render();
+      });
+    }
+    var newListCancel = document.getElementById("new-list-cancel");
+    if(newListCancel){
+      newListCancel.addEventListener("click", function(){ addingListOpen = false; render(); });
+    }
+
+    document.querySelectorAll(".card").forEach(function(cardEl){
+      cardEl.addEventListener("click", function(){ openCardModal(cardEl.dataset.listId, cardEl.dataset.cardId); });
+      cardEl.addEventListener("dragstart", function(e){
+        dragCardId = cardEl.dataset.cardId;
+        cardEl.classList.add("dragging");
+        try{ e.dataTransfer.setData("text/plain", cardEl.dataset.cardId); }catch(err){}
+        e.dataTransfer.effectAllowed = "move";
+      });
+      cardEl.addEventListener("dragend", function(){
+        cardEl.classList.remove("dragging");
+        dragCardId = null;
+      });
+    });
+
+    document.querySelectorAll(".cards").forEach(function(wrap){
+      wrap.addEventListener("dragover", function(e){
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      });
+      wrap.addEventListener("drop", function(e){
+        e.preventDefault();
+        if(!dragCardId) return;
+        var targetListId = wrap.dataset.listId;
+        moveCard(dragCardId, targetListId, computeDropIndex(wrap, e.clientY));
+      });
+    });
+  }
+
+  function computeDropIndex(wrap, clientY){
+    var cardEls = Array.prototype.slice.call(wrap.querySelectorAll(".card:not(.dragging)"));
+    for(var i=0;i<cardEls.length;i++){
+      var rect = cardEls[i].getBoundingClientRect();
+      if(clientY < rect.top + rect.height/2) return i;
+    }
+    return cardEls.length;
+  }
+
+  function moveCard(cardId, targetListId, index){
+    var sourceList = null, card = null;
+    state.lists.forEach(function(l){
+      var idx = l.cards.findIndex(function(c){ return c.id === cardId; });
+      if(idx !== -1){ sourceList = l; card = l.cards[idx]; l.cards.splice(idx,1); }
+    });
+    if(!card) return;
+    var targetList = findList(targetListId);
+    if(!targetList) return;
+    var clamped = Math.max(0, Math.min(index, targetList.cards.length));
+    targetList.cards.splice(clamped, 0, card);
+    save();
+    render();
+  }
+
+  function openCardModal(listId, cardId){
+    var list = findList(listId);
+    if(!list) return;
+    var card = list.cards.find(function(c){ return c.id === cardId; });
+    if(!card) return;
+
+    modalRoot.innerHTML =
+      '<div class="modal-backdrop" id="modal-backdrop">' +
+        '<div class="modal">' +
+          '<h2>Edit card</h2>' +
+          '<input id="edit-title" value="'+escapeHtml(card.title)+'">' +
+          '<textarea id="edit-desc" placeholder="Description">'+escapeHtml(card.desc)+'</textarea>' +
+          '<div class="modal-actions">' +
+            '<button class="link-danger" id="edit-delete">Delete card</button>' +
+            '<div class="right-actions">' +
+              '<button class="btn-ghost" id="edit-cancel">Cancel</button>' +
+              '<button class="btn-primary" id="edit-save">Save</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById("modal-backdrop").addEventListener("click", function(e){
+      if(e.target.id === "modal-backdrop") closeModal();
+    });
+    document.getElementById("edit-cancel").addEventListener("click", closeModal);
+    document.getElementById("edit-save").addEventListener("click", function(){
+      var title = document.getElementById("edit-title").value.trim();
+      if(!title) return;
+      card.title = title;
+      card.desc = document.getElementById("edit-desc").value.trim();
+      save(); closeModal(); render();
+    });
+    document.getElementById("edit-delete").addEventListener("click", function(){
+      list.cards = list.cards.filter(function(c){ return c.id !== cardId; });
+      save(); closeModal(); render();
+    });
+  }
+
+  function closeModal(){ modalRoot.innerHTML = ""; }
+
+  document.getElementById("reset-btn").addEventListener("click", function(){
+    state = seedData();
+    save(); render();
+  });
+
+  render();
+})();
+</script>
+
+</body></html>
